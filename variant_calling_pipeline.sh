@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=bam_pipeline
-#SBATCH --output=%parallel_bam_pipeline_%j.out
-#SBATCH --error=bam_pipeline.err
+#SBATCH --job-name=variant_calling_pipeline
+#SBATCH --output=%parallel_variant_calling_pipeline_%j.out
+#SBATCH --error=er_variant_calling_pipeline.err
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=tpaisie@ufl.edu
 #SBATCH --nodes=1
@@ -14,12 +14,11 @@
 
 pwd; hostname; date
 
-# module load intel 
-# module load gcc
-# module load parallel
-# module load fastqc
-# module load trimmomatic
-# module load bowtie2
+module load gcc
+module load parallel
+module load fastqc
+module load trimmomatic
+module load bowtie2
 module load samtools
 module load picard
 module load gatk/3.8
