@@ -25,10 +25,6 @@ module load gatk/3.8
 
 export _JAVA_OPTIONS="-Xmx50g"
 
-# REF=/ufrc/data/reference/bowtie2/v_cholerae_o1_2010el_1786
-# REF=/ufrc/salemi/tpaisie/vvulnificus/ref_seqs/M06-24.fasta
-# REF=/ufrc/data/reference/bowtie2/vibrChol1
-
 ls -1 | parallel 'fastqc -f fastq {}_1.fastq.gz {}_2.fastq.gz' ::: $(ls *_*.fastq.gz | rev | cut -c 12- | rev | uniq)
 parallel 'trimmomatic PE {}_1.fastq.gz {}_2.fastq.gz {}_pair_1.fastq.gz U_{}_1.fastq.gz {}_pair_2.fastq.gz U_{}_2.fastq.gz ILLUMINACLIP:/apps/trimmomatic/adapters/TruSeq3-PE-2.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36' ::: $(ls *_*.fastq.gz | rev | cut -c 12- | rev | uniq)
 ls -1 | parallel 'fastqc -f fastq {}_pair_1.fastq.gz {}_pair_2.fastq.gz' ::: $(ls *_pair_*.fastq.gz | rev | cut -c 17- | rev | uniq)
