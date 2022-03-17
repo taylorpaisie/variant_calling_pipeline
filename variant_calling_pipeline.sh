@@ -21,7 +21,7 @@ module load trimmomatic
 module load bowtie2
 module load samtools
 module load picard
-module load gatk/3.8
+module load gatk
 
 export _JAVA_OPTIONS="-Xmx50g"
 
