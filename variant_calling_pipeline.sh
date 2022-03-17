@@ -47,8 +47,7 @@ parallel 'picard MarkDuplicates I={}_re.bam O={}_nodups.bam M=marked_dup_metrics
 # 		picard MarkDuplicates I=${i}_re.bam O=${i}_nodups.bam M=marked_dup_metrics_${i}.txt ASSUME_SORTED=true REMOVE_DUPLICATES=true READ_NAME_REGEX="[a-zA-Z0-9]+:[0-9]:([0-9]+):([0-9]+):([0-9]+).*" OPTICAL_DUPLICATE_PIXEL_DISTANCE=100
 # 	done
 
-# index the output bam file from MarkDuplicates
-# Must be indexed for the following GATK command
+# index the output bam file from MarkDuplicates - must be indexed for the following GATK command
 parallel 'samtools index {}_re.bam' ::: $(ls *_re.bam | rev | cut -c 8- | rev | uniq)
 
 
@@ -64,7 +63,8 @@ samtools merge -b $FILE $OUTPUT
 FILE1=$1
 FILE2=$2
 
-freebayes -L ${FILE1} -f $REF -T 0.001 -p 1 -i -X -n 0 -E 3 --min-repeat-size 5 -m 1 -q 20 -R 0 -Y 0 -e 1000 -F 0.5 -C 2 -3 0 -G 1 -! 0 > ${FILE2}
+freebayes -L ${FILE1} -f $REF -T 0.001 -p 1 -i -X -n 0 -E 3 \ 
+--min-repeat-size 5 -m 1 -q 20 -R 0 -Y 0 -e 1000 -F 0.5 -C 2 -3 0 -G 1 -! 0 > ${FILE2}
 
 
 export _JAVA_OPTIONS="-Xmx10g"
@@ -79,9 +79,13 @@ gatk SelectVariants -R $ref -V ${VCF} --select-type-to-include INDEL -O indels_$
 
 # # # # # # step 3 - filter the SNP and Indel files
 # # # # # # filters the SNP vcf
-gatk VariantFiltration -R $ref -V snps_${VCF} --filter-expression 'QD < 2.0 || FS > 60.0 || MQ < 40.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0 || SOR > 4.0' --filter-name "basic_snp_filter" -O filtered_snps_${VCF}
+gatk VariantFiltration -R $ref -V snps_${VCF} --filter-expression \ 
+'QD < 2.0 || FS > 60.0 || MQ < 40.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0 || SOR > 4.0' \  
+--filter-name "basic_snp_filter" -O filtered_snps_${VCF}
 
-gatk VariantFiltration -R $ref -V indels_${VCF} --filter-expression 'QD < 2.0 || FS > 200.0 || ReadPosRankSum < -20.0 || SOR > 10.0' --filter-name "basic_indel_filter" -O filtered_indels_${VCF}
+gatk VariantFiltration -R $ref -V indels_${VCF} --filter-expression \ 
+'QD < 2.0 || FS > 200.0 || ReadPosRankSum < -20.0 || SOR > 10.0' \ 
+--filter-name "basic_indel_filter" -O filtered_indels_${VCF}
 
 ###########################################################################################################################
 
@@ -93,7 +97,7 @@ parallel 'gatk BaseRecalibrator -R /blue/salemi/tpaisie/cholera/ref_seq/vibrChol
 # 		gatk BaseRecalibrator -R $ref -I ${i}.bam --known-sites filtered_snps_${VCF} --known-sites filtered_indels_${VCF} -O ${i}.table
 # 	done
 
-# Analyze the BQSR reports from the base recalibration steps (steps 4 & 5)
+# Analyze the BQSR reports from the base recalibration steps
 # parallel 'gatk ApplyBQSR -R /ufrc/salemi/tpaisie/cholera/ref_seq/v_cholerae_o1_2010el_1786.fa -I {}.bam --bqsr-recal-file {}.table -O recal_{}.bam' ::: $(ls *.bam | rev | cut -c 5- | rev | uniq)
 gatk ApplyBQSR -R $REF -I ${FILE}.bam --bqsr-recal-file ${FILE}.table -O recal_${FILE}.bam
 
@@ -108,15 +112,14 @@ samtools merge -b $LIST $OUTPUT
 
 REF=/ufrc/salemi/tpaisie/cholera/ref_seq/v_cholerae_o1_2010el_1786.fa
 
- #calling variants on recalibrated bam files (will have only one vcf file as the output)
-freebayes -L ${FILE1} -f $REF -T 0.001 -p 1 -i -X -n 0 -E 3 --min-repeat-size 5 -m 1 -q 20 -R 0 -Y 0 -e 1000 -F 0.5 -C 2 -3 0 -G 1 -! 0 > ${FILE2}
+#calling variants on recalibrated bam files (will have only one vcf file as the output)
+freebayes -L ${FILE1} -f $REF -T 0.001 -p 1 -i -X -n 0 -E 3 \ 
+--min-repeat-size 5 -m 1 -q 20 -R 0 -Y 0 -e 1000 -F 0.5 -C 2 -3 0 -G 1 -! 0 > ${FILE2}
 
-# # step 9 - filter vcf file from freebayes for SNPs only
+# - filter vcf file from freebayes for SNPs only
 vcffilter -f "TYPE = snp" ${LIST}.vcf > snps_${LIST}.vcf
 
-
-# # # step 10 - compressing and indexing the snp only vcf file & variant normalization of the snp only vcf file & decompressing the vcf file
-
+# # compressing and indexing the snp only vcf file & variant normalization of the snp only vcf file & decompressing the vcf file
 # # #compress vcf
 bgzip snps_${LIST}.vcf
 
